@@ -1,0 +1,2 @@
+-DBOARD_HAS_PSRAM
+-mfix-esp32-psram-cache-issue

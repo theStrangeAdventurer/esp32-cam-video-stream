@@ -1,0 +1,8 @@
+#pragma once
+#define WIFI_SSID "your-ssid"
+#define WIFI_PASS "your-password"
+
+// Статический IP (раскомментировать для фиксации, иначе DHCP)
+// #define WIFI_IP      192,168,0,200
+// #define WIFI_GATEWAY 192,168,0,1
+// #define WIFI_SUBNET  255,255,255,0
