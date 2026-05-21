@@ -1,0 +1,21 @@
+# Мультивьюер для ESP32-CAM — MJPEG relay
+#
+# Схема:
+#   Node.js relay: одно соединение к камере → раздаёт стрим N браузерам.
+#   Никакого перекодирования, нулевая задержка.
+#
+# Использование:
+#   1. docker compose up -d
+#   2. Откройте http://<адрес_сервера>:8080
+#
+# Остановка:
+#   docker compose down
+
+services:
+
+  relay:
+    build: ./relay
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      - CAM_HOST=${CAM_HOST:-192.168.0.111}

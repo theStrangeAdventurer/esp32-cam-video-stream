@@ -31,8 +31,38 @@
 // ── Globals ──────────────────────────────────────────────────────────
 WebServer server(80);
 
+// ── Root page (инструкция) ─────────────────────────────────────────
+static const char PAGE_DIRECT[] PROGMEM = R"raw(
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ESP32-CAM</title>
+  <style>
+    body{background:#111;color:#ccc;font:16px sans-serif;padding:24px}
+    code{background:#333;padding:2px 6px;border-radius:4px}
+    a{color:#4af}
+  </style>
+</head>
+<body>
+  <h2>ESP32-S3 CAM</h2>
+  <p>Камера работает в режиме одного клиента.</p>
+  <p>Для просмотра с нескольких устройств запустите relay:</p>
+  <pre>git clone ... && cd esp32-cam-cctv
+CAM_HOST=&lt;этот-IP&gt; bash setup-rpi.sh</pre>
+  <p>И откройте <code>http://&lt;ip-сервера&gt;:8080</code></p>
+</body>
+</html>
+)raw";
+
 // ── MJPEG stream handler ────────────────────────────────────────────
 static void handleStream() {
+  if (!server.hasHeader("x-multiclient-stream")) {
+    server.send(403, "text/plain", "403 Forbidden — use relay on port 8080 (see /)");
+    return;
+  }
+
   WiFiClient client = server.client();
   client.println("HTTP/1.1 200 OK");
   client.println("Content-Type: multipart/x-mixed-replace; boundary=frame");
@@ -59,27 +89,9 @@ static void handleStream() {
   }
 }
 
-// ── HTML page ───────────────────────────────────────────────────────
-static const char PAGE[] PROGMEM = R"raw(
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>ESP32-CAM</title>
-  <style>
-    *{margin:0;padding:0;background:#111}
-    img{display:block;max-width:100vw;max-height:100vh;margin:auto}
-  </style>
-</head>
-<body>
-  <img src="/stream">
-</body>
-</html>
-)raw";
 
 void handleRoot() {
-  server.send_P(200, "text/html", PAGE);
+  server.send_P(200, "text/html", PAGE_DIRECT);
 }
 
 // ── Camera init ─────────────────────────────────────────────────────
@@ -130,8 +142,8 @@ static bool initCamera() {
 
   sensor_t *s = esp_camera_sensor_get();
   if (s) {
-    s->set_vflip(s, 1);
-    s->set_hmirror(s, 1);
+    s->set_vflip(s, 0);
+    s->set_hmirror(s, 0);
   }
 
   return true;
@@ -144,7 +156,7 @@ void setup() {
 
   // LED
   pinMode(LED_GPIO, OUTPUT);
-  digitalWrite(LED_GPIO, LOW);
+  pinMode(2, OUTPUT); digitalWrite(2, HIGH); // встроенный красный LED off
 
   // WiFi
   #ifdef WIFI_IP
@@ -156,6 +168,7 @@ void setup() {
 
   unsigned long start = millis();
   while (WiFi.status() != WL_CONNECTED && millis() - start < 15000) {
+    digitalWrite(LED_GPIO, !digitalRead(LED_GPIO));
     delay(500);
     Serial.print(".");
   }
@@ -180,14 +193,18 @@ void setup() {
     ESP.restart();
   }
   Serial.println("Camera OK");
+  digitalWrite(LED_GPIO, LOW);
 
   // Web server
   server.on("/",        handleRoot);
   server.on("/stream",  handleStream);
+
+  // без этого hasHeader("x-multiclient-stream") всегда false
+  const char* hdrKeys[] = {"x-multiclient-stream"};
+  server.collectHeaders(hdrKeys, 1);
+
   server.begin();
   Serial.println("HTTP server started on :80");
-
-  digitalWrite(LED_GPIO, HIGH);
 }
 
 // ── Loop ─────────────────────────────────────────────────────────────

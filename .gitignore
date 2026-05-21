@@ -1,4 +1,5 @@
 config.h
+.env
 build/
 *.bin
 *.elf

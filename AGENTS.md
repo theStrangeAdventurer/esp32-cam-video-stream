@@ -15,9 +15,11 @@ ESP32-S3 CAM video streaming to local network. Board has two USB Type-C connecto
 ```sh
 # GOOUUU ESP32-S3 CAM требует OPI PSRAM
 arduino-cli compile --fqbn esp32:esp32:esp32s3:PSRAM=opi,PartitionScheme=huge_app,FlashMode=dio .
-arduino-cli upload --fqbn esp32:esp32:esp32s3:PSRAM=opi,PartitionScheme=huge_app,FlashMode=dio --port /dev/ttyUSB0 .
-arduino-cli monitor --port /dev/ttyUSB0 --config baudrate=115200
+arduino-cli upload   --fqbn esp32:esp32:esp32s3:PSRAM=opi,PartitionScheme=huge_app,FlashMode=dio --port /dev/ttyUSB0 .
+arduino-cli monitor  --port /dev/ttyUSB0 --config baudrate=115200
 ```
+
+Or use `./build.sh [port]`.
 
 ## Connection
 
